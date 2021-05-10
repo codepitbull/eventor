@@ -22,20 +22,20 @@ func CallFunctionByName(i interface{}, name string) (EventFunc, error) {
 	args := []reflect.Value{}
 	result := m.Call(args)
 
-	if !result[2].IsNil() {
-		//we got an error
+	functioneValue := result[0]
+	durationValue := result[1]
+	errorValue := result[2]
+
+	if !errorValue.IsNil() {
 		return nil, result[2].Interface().(error)
-	} else if !result[1].IsNil() {
-		if !result[0].IsNil() {
-			//TODO: add the delay (e.g. reschedule in k8s-eventloop)
-			return result[0].Interface().(EventFunc), nil
+	} else if !durationValue.IsNil() {
+		if !functioneValue.IsNil() {
+			return functioneValue.Interface().(EventFunc), nil
 		} else {
-			//We got a duration without an EventFunc => Error
 			return nil, &DurationWithoutEventFuncError{Interface: t.Type(), FuncName: name}
 		}
-	} else if !result[0].IsNil() {
-		//We got a func without a duration to wait => Execute
-		return result[0].Interface().(EventFunc), nil
+	} else if !functioneValue.IsNil() {
+		return functioneValue.Interface().(EventFunc), nil
 	}
 	//We reached the end
 	return nil, nil
