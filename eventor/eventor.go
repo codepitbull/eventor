@@ -1,27 +1,46 @@
 package eventor
 
 import (
+	"errors"
+	"fmt"
 	"time"
 )
 
-type EventFunc func() (*time.Duration, error)
+type Step string
+
+type EventFunc func() (Step, *time.Duration, error)
 
 type EventProcessor struct {
-	eventHandlers []EventFunc
+	start Step
+	eventHandlers map[Step]EventFunc
 }
 
 
-func NewEventProcessor(eventHandlers... EventFunc) EventProcessor {
+func NewEventProcessor(start Step, eventHandlers map[Step]EventFunc) EventProcessor {
 	return EventProcessor{
+		start: start,
 		eventHandlers: eventHandlers,
 	}
 }
 
-func (f *EventProcessor) Run() error {
-	for _, handler := range f.eventHandlers {
-		if _, err := handler(); err != nil {
-			return err
-		}
+func (e *EventProcessor) Run() error {
+	if e.start == "" {
+		return errors.New("no start step defined")
 	}
-	return nil
+	return e.RunFrom(e.start)
+}
+
+func (e *EventProcessor) RunFrom(step Step) error {
+	fun, ok := e.eventHandlers[step]
+	if !ok {
+		return fmt.Errorf("unknown step: %s", step)
+	}
+	next, _, err := fun()
+	if err != nil {
+		return err
+	}
+	if next == "" {
+		return nil
+	}
+	return e.RunFrom(next)
 }

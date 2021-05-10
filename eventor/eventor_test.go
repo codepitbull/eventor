@@ -9,10 +9,11 @@ import (
 
 func TestEventorAllOk(t *testing.T) {
 	te := TestEventor{}
-	processor := eventor.NewEventProcessor(
-		te.Start,
-		te.Step2,
-		te.End,
+	processor := eventor.NewEventProcessor("start", map[eventor.Step]eventor.EventFunc{
+		"start": te.Start,
+		"step2": te.Step2,
+		"end": te.End,
+	},
 	)
 	err := processor.Run()
 	if err != nil {
@@ -22,17 +23,17 @@ func TestEventorAllOk(t *testing.T) {
 
 type TestEventor struct {}
 
-func (t *TestEventor) Start() (*time.Duration, error) {
+func (t *TestEventor) Start() (eventor.Step, *time.Duration, error) {
 	fmt.Println("start")
-	return nil, nil
+	return "step2", nil, nil
 }
 
-func (t *TestEventor) Step2() (*time.Duration, error) {
+func (t *TestEventor) Step2() (eventor.Step, *time.Duration, error) {
 	fmt.Println("step2")
-	return nil, nil
+	return "end", nil, nil
 }
 
-func (t *TestEventor) End() (*time.Duration, error) {
+func (t *TestEventor) End() (eventor.Step, *time.Duration, error) {
 	fmt.Println("end")
-	return nil, nil
+	return "", nil, nil
 }
